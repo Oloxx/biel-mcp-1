@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://mcp.biel.ai/sse?project_slug=YOUR_PROJECT_SLUG&domain=https://your-docs-domain.com"
+        "https://mcp.biel.ai/YOUR_PROJECT_SLUG/sse?domain=https://your-docs-domain.com&metadata=mcp"
       ],
       "description": "Query your product's documentation, APIs, and knowledge base. Ask about API specs, guides, and troubleshooting."
     }

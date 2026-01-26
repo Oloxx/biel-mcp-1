@@ -33,15 +33,17 @@ When AI tools can read your product documentation, they become **significantly**
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://mcp.biel.ai/sse?project_slug=YOUR_PROJECT_SLUG&domain=https://your-docs-domain.com"
+        "https://mcp.biel.ai/YOUR_PROJECT_SLUG/sse?domain=https://your-docs-domain.com&metadata=mcp"
       ]
     }
   }
 }
 ```
 
-**Required:** `project_slug` and `domain`  
-**Optional:** `api_key` (only needed for private projects)
+**Required:** `project_slug`  
+**Optional:** `api_key`, `domain`, `metadata`
+
+> **Clean URLs**: The format `https://mcp.biel.ai/{project}/sse` provides a clean, RESTful structure. Legacy format (`/sse?project_slug=...`) is still supported for backward compatibility.
 
 ### 2. Add to your AI tool
 

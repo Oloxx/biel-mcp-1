@@ -328,19 +328,174 @@ async def health_check():
         "service": SERVER_NAME, 
         "version": SERVER_VERSION,
         "usage": {
-            "endpoint": "/sse",
-            "query_params": {
-                "project_slug": "Your Biel.ai project slug",
-                "api_key": "Your API key (optional)",
-                "base_url": "Biel.ai instance URL (optional, defaults to https://app.biel.ai)",
-                "domain": "Domain URL to pass as context to Biel.ai (optional)",
-                "metadata": "Metadata to tag conversation source (optional)"
+            "recommended_format": {
+                "endpoint": "/{project_slug}/sse",
+                "query_params": {
+                    "api_key": "Your API key (optional)",
+                    "base_url": "Biel.ai instance URL (optional, defaults to https://app.biel.ai)",
+                    "domain": "Domain URL to pass as context to Biel.ai (optional)",
+                    "metadata": "Metadata to tag conversation source (optional)"
+                },
+                "example": "/my-project/sse?api_key=your-key&domain=https://example.com&metadata=mcp"
             },
-            "example": "/sse?project_slug=your-slug&api_key=your-key&domain=https://example.com&metadata=mcp"
+            "legacy_format": {
+                "endpoint": "/sse?project_slug=...",
+                "description": "Original query parameter format (backward compatibility)",
+                "example": "/sse?project_slug=my-project&api_key=your-key&domain=https://example.com&metadata=mcp"
+            }
         }
     }
 
 
+# Path-based endpoints (Clean format - recommended)
+@app.get("/{project_slug}")
+async def sse_project_endpoint(
+    request: Request,
+    project_slug: str,
+    message: Optional[str] = Query(None),
+    api_key: Optional[str] = Query(None),
+    base_url: Optional[str] = Query(None),
+    domain: Optional[str] = Query(None),
+    metadata: Optional[str] = Query(None)
+):
+    """MCP Server-Sent Events endpoint with clean project-based URL (recommended format)."""
+    # Build defaults from path parameter and query parameters
+    defaults = {"project_slug": project_slug}
+    
+    if api_key:
+        defaults["api_key"] = api_key
+    if base_url:
+        defaults["base_url"] = base_url
+    if domain:
+        defaults["domain"] = domain
+    if metadata:
+        defaults["metadata"] = metadata
+    
+    return EventSourceResponse(mcp_sse_generator(request, message, defaults))
+
+
+@app.post("/{project_slug}")
+async def sse_project_post_endpoint(
+    request: Request,
+    project_slug: str,
+    api_key: Optional[str] = Query(None),
+    base_url: Optional[str] = Query(None),
+    domain: Optional[str] = Query(None),
+    metadata: Optional[str] = Query(None)
+):
+    """Handle POST requests to clean project-based endpoint."""
+    # Build defaults from path parameter and query parameters
+    defaults = {"project_slug": project_slug}
+    
+    if api_key:
+        defaults["api_key"] = api_key
+    if base_url:
+        defaults["base_url"] = base_url
+    if domain:
+        defaults["domain"] = domain
+    if metadata:
+        defaults["metadata"] = metadata
+    
+    try:
+        data = await request.json()
+        response = await handle_mcp_request(data, defaults)
+        return JSONResponse(response)
+    except Exception as e:
+        logger.error(f"Error handling POST to project endpoint: {e}")
+        return JSONResponse(
+            create_mcp_response(None, error={"code": UNKNOWN_METHOD_ERROR, "message": str(e)}),
+            status_code=500
+        )
+
+
+@app.options("/{project_slug}")
+async def sse_project_options(project_slug: str):
+    """Handle OPTIONS requests for CORS preflight on project endpoint."""
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+    )
+
+
+# Path-based endpoints with /sse suffix (Alternative format)
+@app.get("/{project_slug}/sse")
+async def sse_path_endpoint(
+    request: Request,
+    project_slug: str,
+    message: Optional[str] = Query(None),
+    api_key: Optional[str] = Query(None),
+    base_url: Optional[str] = Query(None),
+    domain: Optional[str] = Query(None),
+    metadata: Optional[str] = Query(None)
+):
+    """MCP Server-Sent Events endpoint with project slug in path (clean URL format)."""
+    # Build defaults from path parameter and query parameters
+    defaults = {"project_slug": project_slug}
+    
+    if api_key:
+        defaults["api_key"] = api_key
+    if base_url:
+        defaults["base_url"] = base_url
+    if domain:
+        defaults["domain"] = domain
+    if metadata:
+        defaults["metadata"] = metadata
+    
+    return EventSourceResponse(mcp_sse_generator(request, message, defaults))
+
+
+@app.post("/{project_slug}/sse")
+async def sse_path_post_endpoint(
+    request: Request,
+    project_slug: str,
+    api_key: Optional[str] = Query(None),
+    base_url: Optional[str] = Query(None),
+    domain: Optional[str] = Query(None),
+    metadata: Optional[str] = Query(None)
+):
+    """Handle POST requests to SSE endpoint with project slug in path."""
+    # Build defaults from path parameter and query parameters
+    defaults = {"project_slug": project_slug}
+    
+    if api_key:
+        defaults["api_key"] = api_key
+    if base_url:
+        defaults["base_url"] = base_url
+    if domain:
+        defaults["domain"] = domain
+    if metadata:
+        defaults["metadata"] = metadata
+    
+    try:
+        data = await request.json()
+        response = await handle_mcp_request(data, defaults)
+        return JSONResponse(response)
+    except Exception as e:
+        logger.error(f"Error handling POST to SSE: {e}")
+        return JSONResponse(
+            create_mcp_response(None, error={"code": UNKNOWN_METHOD_ERROR, "message": str(e)}),
+            status_code=500
+        )
+
+
+@app.options("/{project_slug}/sse")
+async def sse_path_options(project_slug: str):
+    """Handle OPTIONS requests for CORS preflight on path-based endpoint."""
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization"
+        }
+    )
+
+
+# Legacy query parameter endpoints (Backward compatibility)
 @app.get("/sse")
 async def sse_endpoint(
     request: Request, 
@@ -351,7 +506,7 @@ async def sse_endpoint(
     domain: Optional[str] = Query(None),
     metadata: Optional[str] = Query(None)
 ):
-    """MCP Server-Sent Events endpoint with query parameters for configuration."""
+    """MCP Server-Sent Events endpoint with query parameters for configuration (legacy format)."""
     # Build defaults from query parameters
     defaults = {}
     if project_slug:
@@ -377,7 +532,7 @@ async def sse_post_endpoint(
     domain: Optional[str] = Query(None),
     metadata: Optional[str] = Query(None)
 ):
-    """Handle POST requests to SSE endpoint with query parameters for configuration."""
+    """Handle POST requests to SSE endpoint with query parameters for configuration (legacy format)."""
     # Build defaults from query parameters
     defaults = {}
     if project_slug:
@@ -405,7 +560,7 @@ async def sse_post_endpoint(
 
 @app.options("/sse")
 async def sse_options():
-    """Handle OPTIONS requests for CORS preflight."""
+    """Handle OPTIONS requests for CORS preflight on legacy endpoint."""
     return JSONResponse(
         content={},
         headers={
