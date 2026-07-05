@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./logo-dark..jpg" />
-    <img alt="Biel.ai" src="./logo.jpg" />
+    <source media="(prefers-color-scheme: dark)" srcset="./logo-dark.png" />
+    <img alt="Biel.ai" src="./logo.png" width="120" />
   </picture>
   <h1>Biel.ai MCP Server</h1>
   <h3>Connect your IDE to your product docs</h3>
