@@ -23,7 +23,6 @@ SERVER_VERSION = "2.0.0"
 SERVER_NAME = "biel-ai-mcp"
 DEFAULT_PORT = 7832
 DEFAULT_BASE_URL = "https://app.biel.ai"
-# Biel API v2: the project slug is part of the URL, not the payload
 BIEL_API_PATH_TEMPLATE = "/api/v2/projects/{project_slug}/chats/"
 MCP_PROTOCOL_VERSION = "2024-11-05"
 MCP_PROTOCOL_VERSION_V2 = "2025-11-25"
