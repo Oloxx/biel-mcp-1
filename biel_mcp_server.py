@@ -23,7 +23,8 @@ SERVER_VERSION = "2.0.0"
 SERVER_NAME = "biel-ai-mcp"
 DEFAULT_PORT = 7832
 DEFAULT_BASE_URL = "https://app.biel.ai"
-BIEL_API_PATH = "/api/v1/chats"
+# Biel API v2: the project slug is part of the URL, not the payload
+BIEL_API_PATH_TEMPLATE = "/api/v2/projects/{project_slug}/chats/"
 MCP_PROTOCOL_VERSION = "2024-11-05"
 MCP_PROTOCOL_VERSION_V2 = "2025-11-25"
 REQUEST_TIMEOUT = 30.0
@@ -255,7 +256,6 @@ async def query_biel_ai(arguments: Dict[str, Any], defaults: Dict[str, str] = No
     # Prepare request
     payload = {
         "message": message,
-        "project_slug": project_slug,
         "url": domain if domain else base_url,
         "metadata": metadata
     }
@@ -273,7 +273,7 @@ async def query_biel_ai(arguments: Dict[str, Any], defaults: Dict[str, str] = No
     if client_ip:
         headers["X-Client-IP"] = client_ip
     
-    full_url = f"{base_url.rstrip('/')}{BIEL_API_PATH}/"
+    full_url = f"{base_url.rstrip('/')}{BIEL_API_PATH_TEMPLATE.format(project_slug=project_slug)}"
     
     logger.info(f"Querying Biel.ai: {message[:50]}... (project: {project_slug})")
     
